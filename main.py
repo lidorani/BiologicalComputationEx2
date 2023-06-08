@@ -107,9 +107,10 @@ def plot_graph(time_compare):
 
 
 if __name__ == '__main__':
+    # # # PART A # # #
     time_compare = []
 
-    for n in range(1,6):        # run from 1 to 4
+    for n in range(1,5):        # run from 1 to 4
         # measuring time
         start_time = time.time()
 
@@ -123,3 +124,5 @@ if __name__ == '__main__':
     print("****************************************************************************************************")
 
     plot_graph(time_compare)
+
+
