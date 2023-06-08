@@ -41,6 +41,10 @@ def generate_subgraphs(n):
     if n == 1:
         graph.add_edge(0,0)
 
+    # Relabel the nodes
+    mapping = {node: node + 1 for node in graph.nodes()}
+    graph = nx.relabel_nodes(graph, mapping)
+
     # generate a list of all edges
     all_edges_list = list(graph.edges())
 #    print("List of all edges:", all_edges_list)
@@ -125,4 +129,4 @@ if __name__ == '__main__':
 
     plot_graph(time_compare)
 
-
+    # # # PART B # # #
