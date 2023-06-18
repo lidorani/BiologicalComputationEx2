@@ -2,48 +2,38 @@ import networkx as nx
 import time
 import matplotlib.pyplot as plt
 
-# input: number of vertices
+
+# input: number of vertices, list of all subgraphs
 # output: number of motifs
 # function description: this function gets as input the number of vertices in a graph, then uses sub-functions
 #                       to count the number of non-isomorphic motifs that it contains.
-def count_motifs(n):
-    print("****************************************************************************************************")
-    print("n = ",n)
-
-    # generate a list of all subgraphs for n vertices
-    all_subgraphs_list = generate_subgraphs(n)
-
+def get_motifs_part_a(n, all_subgraphs_list):
     # remove disconnected subgraphs
     connected_subgraphs = []
     for graph in all_subgraphs_list:
         if check_connectivity(graph, n):
             connected_subgraphs.append(graph.copy())  # Append a copy of the graph
-#    for subgraph in all_subgraphs_list:
-#        print(subgraph.edges())
     print("Number of connected graphs:", len(connected_subgraphs))
 
     # get non-isomorphic subgraphs
     non_isomorphic_subgraphs = get_non_isomorphic_subgraphs(connected_subgraphs)
-#    for subgraph in non_isomorphic_subgraphs:
-#        print(subgraph.edges())
     print("Number of unique patterns of subgraphs:", len(non_isomorphic_subgraphs))
 
-    write_to_file(n, non_isomorphic_subgraphs)
+    write_to_file_part_a(n, non_isomorphic_subgraphs)
 
-    return len(non_isomorphic_subgraphs)
+    return non_isomorphic_subgraphs
 
 
 # input: number of vertices
 # output: list of all sub-graphs for input
-def generate_subgraphs(n):
-    # create a connected directed graph with n nodes
-    graph = nx.complete_graph(n, create_using=nx.DiGraph())
+def generate_subgraphs(n, graph):
     if n == 1:
         graph.add_edge(0,0)
 
     # Relabel the nodes
-    mapping = {node: node + 1 for node in graph.nodes()}
-    graph = nx.relabel_nodes(graph, mapping)
+    if get_lowest_vertex(graph.edges) == 0:
+        mapping = {node: node + 1 for node in graph.nodes()}
+        graph = nx.relabel_nodes(graph, mapping)
 
     # generate a list of all edges
     all_edges_list = list(graph.edges())
@@ -55,9 +45,7 @@ def generate_subgraphs(n):
         subgraph_edges = [all_edges_list[j] for j in range(len(all_edges_list)) if (i & (1 << j)) != 0]
         subgraph = nx.DiGraph(subgraph_edges)
         all_subgraphs.append(subgraph)
-
     print("Number of subgraphs:", len(all_subgraphs))
-
     return all_subgraphs
 
 
@@ -71,7 +59,7 @@ def check_connectivity(graph, n):
     return nx.is_connected(undirected_graph)
 
 
-#function description: this function outputs a list of unique patterns of graphs in given graphs list.
+# function description: this function outputs a list of unique patterns of graphs in given graphs list.
 def get_non_isomorphic_subgraphs(subgraphs):
     non_isomorphic_subgraphs = []
     for graph in subgraphs:
@@ -85,7 +73,8 @@ def get_non_isomorphic_subgraphs(subgraphs):
 
     return non_isomorphic_subgraphs
 
-def write_to_file(n, non_isomorphic_subgraphs):
+
+def write_to_file_part_a(n, non_isomorphic_subgraphs):
     # Create a file to write the data
     filename = f"motifs_{n}.txt"
     with open(filename, 'w') as file:
@@ -110,23 +99,145 @@ def plot_graph(time_compare):
     plt.show()
 
 
-if __name__ == '__main__':
-    # # # PART A # # #
+def part_a():
     time_compare = []
 
-    for n in range(1,5):        # run from 1 to 4
+    for n in range(1, 5):  # run from 1 to 4
         # measuring time
         start_time = time.time()
 
-        num = count_motifs(n)
+        print("************************************************************************************")
+        print("n = ", n)
+
+        # create a full connected directed graph with n nodes
+        graph = nx.complete_graph(n, create_using=nx.DiGraph())
+
+        # generate a list of all subgraphs for n vertices
+        all_subgraphs_list = generate_subgraphs(n, graph)
+
+        # count motifs for given group of subgraphs
+        num = len(get_motifs_part_a(n, all_subgraphs_list))
 
         end_time = time.time()
         elapsed_time = end_time - start_time
         print("Elapsed time: {:.2f} seconds".format(elapsed_time))
         time_compare.append(elapsed_time)
 
-    print("****************************************************************************************************")
-
+    print("************************************************************************************")
     plot_graph(time_compare)
 
-    # # # PART B # # #
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                         functions for part 2                      #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+def get_input(name):
+    # open file and read it's content
+    with open("input.txt", "r") as file:
+        lines = file.readlines()
+
+    # transfer input data into variables
+    n = int(lines[0].split("=")[1].strip())
+    edges = []
+    for line in lines[1:]:
+        edge = tuple(map(int, line.strip().split()))
+        edges.append(edge)
+
+    return n, edges
+
+
+def get_highest_vertex(edges):
+    highest_vertex = max(max(edge) for edge in edges)
+    return highest_vertex
+
+
+def get_lowest_vertex(edges):
+    lowest_vertex = min(min(edge) for edge in edges)
+    return lowest_vertex
+
+
+def create_graph_from_edges(num, edges):
+    graph = nx.DiGraph()
+    graph.add_nodes_from(range(1, num + 1))
+    graph.add_edges_from(edges)
+    return graph
+
+
+# input: number of vertices, list of all subgraphs
+# output: number of motifs
+# function description: this function gets as input the number of vertices in a graph, then uses sub-functions
+#                       to count the number of of appearances of motifs for input graph.
+def get_motifs_list_part_b(n, all_subgraphs_list):
+    # remove disconnected subgraphs
+    connected_subgraphs = []
+    for graph in all_subgraphs_list:
+        if check_connectivity(graph, n):
+            connected_subgraphs.append(graph.copy())  # Append a copy of the graph
+
+    # get non-isomorphic subgraphs
+    non_isomorphic_subgraphs = get_non_isomorphic_subgraphs(connected_subgraphs)
+    return non_isomorphic_subgraphs
+
+
+# function description: ???????????????????????????????????????????????????????????????????????????????
+def count_num_of_motifs(motifs_list, subgraphs_list):
+    graph_counts = {}
+
+    for motif in motifs_list:
+        count = 0
+        for subgraph in subgraphs_list:
+            if nx.is_isomorphic(motif, subgraph):
+                count += 1
+
+        graph_counts[motif] = count
+
+    return graph_counts
+
+
+def write_to_file_part_b(n, graphs_list, num_of_appearances, filename):
+    # Create a file to write the data
+    with open(filename, 'w') as file:
+        # Write n and the total number of motifs to the file
+        file.write(f"n={n}\n")
+        file.write(f"number of motifs={len(graphs_list)}\n\n")
+
+        # Write each subgraph to the file
+        for i, subgraph in enumerate(graphs_list, start=1):
+            file.write(f"#{i}\n")
+            for edge in subgraph.edges():
+                file.write(f"{edge[0]} {edge[1]}\n")
+
+            # Write the count of appearances for the current subgraph
+            count = num_of_appearances.get(subgraph, 0)
+            file.write(f"count={count}\n\n")
+
+
+# function description: this function gets the input and parses it.
+#                       at first, it creates all subgraphs for given "n".
+#                       later it creates
+def part_b():
+    # read input from text file and create a graph
+    [n, edges] = get_input("input.txt")
+    print("n =", n)
+    print("edges =", edges)
+
+    # generate a list of motifs for given "n" value
+    graph = nx.complete_graph(n, create_using=nx.DiGraph())
+    motifs_list_for_n = get_motifs_part_a(n, generate_subgraphs(n, graph))
+
+    # create all subgraphs for input graph
+    vertices_number = get_highest_vertex(edges)
+    print("max vertex for input graph is ", vertices_number)
+    input_graph = create_graph_from_edges(vertices_number, edges)
+    subgraphs_of_input_graph = generate_subgraphs(n, input_graph)
+
+    # count how many appearances each motif has on motifs group, by checking isomorphism
+    appearances_list = count_num_of_motifs(motifs_list_for_n, subgraphs_of_input_graph)
+
+    # output results to file "output.txt"
+    write_to_file_part_b(n, motifs_list_for_n, appearances_list, "output.txt")
+    return
+
+
+if __name__ == '__main__':
+    part_a()
+    part_b()
