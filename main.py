@@ -235,6 +235,7 @@ def part_b():
 
     # output results to file "output.txt"
     write_to_file_part_b(n, motifs_list_for_n, appearances_list, "output.txt")
+
     return
 
 
